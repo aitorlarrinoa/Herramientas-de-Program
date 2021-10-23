@@ -1,0 +1,314 @@
+---
+title: "Práctica 1"
+author: "Aitor Larrinoa Rementeria"
+date: "10/21/2021"
+output: html_document
+---
+
+## Introducción
+
+En este informe podremos ver la resolución de la práctica 1 relativa a la parte de R de la asignatura *Herramientas de programación* del máster Universitario en Ciencia de Datos de CUNEF. La práctica trata de la preparación de un dataset para un posterior MMM. Los datos son provistos por la propia práctica y se encuentran en el archivo csv **mktmix.csv**. Los problemas que veremos durante el informe serán resueltos mediante el software estadístico R, más concretamente con RStudio.
+
+La práctica consta de 12 puntos a los que denotaremos por ejercicios. Cada uno de los ejercicios tendrá una ligera explicación y posterior resolución de los mismos. Por otro lado, antes de comenzar a resolver los ejercicios, cargaremos las librerías necesarias para la práctica. Después, se irán mencionando los momentos en los que haremos uso de estas librerías para saber exactamente en qué momento y para qué se han utilizado. 
+
+Finalmente, también hemos creado un proyecto para esta práctica. En el proyecto se encuentran el archivo .R que hemos utilizado para resolver los problemas, el archivo .Rmd que sirve para redactar este informe, el archivo html y finalmente el csv antes mencionado.
+
+Empecemos así con la resolución de esta práctica.
+
+## Resolución de la práctica
+
+En primer lugar, lo que haremos será cargar las librerías necesarias.
+
+```{r librerias}
+library(readr)
+library(janitor)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(purrr)
+```
+
+Empecemos ahora a resolver los problemas planteados en la práctica.
+
+### Ejercicio 1
+
+En primer lugar, deberemos cargar el csv que nos proporciona la práctica. Para ello necesitamos la librería "read_r". La función de la que haremos uso será read_csv. Dado que el archivo csv se encuentra en la misma carpeta que el proyecto, únicamente deberemos poner el nombre del archivo como ruta.
+
+```{r ejercicio 1.1}
+df_mmm <- read_csv("mktmix.csv")
+df_mmm 
+```
+
+Ahora, mediante la librería "janitor" escribiremos los nombres de las columnas de una manera más limpia y clara. Esto será posible gracias a la función **clean_names**.
+
+```{r ejercicio 1.2}
+df_mmm <- clean_names(df_mmm)
+```
+
+### Ejercicio 2
+
+Con el fin de poder ver el número de filas y columnas del Data frame, lo que haremos será usar la función **dim**.
+
+```{r ejercicio 2.1}
+dim(df_mmm)
+```
+
+Obtenemos que el data frame tiene dimensión 104x9, es decir, tiene 104 filas o individuos y 9 columnas o variables.
+
+También es posible usar las funciones **nrow** y **ncol**.
+
+```{r ejercicio 2.2}
+nrow(df_mmm)
+ncol(df_mmm)
+```
+
+Con las cuales, como se puede observar, obtenemos el mismo resultado.
+
+Por otro lado, se nos pide ver cuál es la clase de las columnas *base_price* y *discount*. Lo haremos mediante la función **class**.
+
+```{r ejercicio 2.3}
+class(df_mmm$base_price)
+class(df_mmm$discount)
+```
+
+Ambas clases son numéricas. Sabemos que dentro de la clase "numeric", tenemos valores del tipo "integer" y del tipo "double". Ya que estamos hablando de precios y descuentos, nos podemos imaginar que está clase "numeric" se refiere a la clase "double".
+
+### Ejercicio 3
+
+En el tercer ejercicio se nos pide modificar la columna *newspaper_inserts*. Veamos primero que la class de *newspaper_inserts* es "character".
+
+```{r ejercicio 3.1}
+class(df_mmm$newspaper_inserts)
+```
+
+Efectivamente, luego hagamos lo que el ejercicio nos pide.
+
+Usaremos la función **mutate** de la librería "dplyr" y la función **if_else** de R base, para cambiar los valores de la columna *newspaper_inserts*. Haremos uso también de la función **is.na()**. Esta última función nos devolverá TRUE si se encuentra con un NA, y nos devolverá FALSE en caso contrario. Si is.na() nos devuelve el valor TRUE, entonces la variable *newspaper_inserts* tomará el valor "0", mientras que si lo que nos devuelve es FALSE, tomará el valor "1".
+
+```{r ejercicio 3.2}
+df_mmm <- df_mmm %>% 
+  mutate (newspaper_inserts = 
+            if_else(is.na(newspaper_inserts),
+                    0, 1))
+```
+
+Veamos ahora si la class de la variable ha cambiado a "numeric".
+
+```{r ejercicio 3.3}
+class(df_mmm$newspaper_inserts)
+```
+
+Si, la clase de la columna *newspaper_inserts* ha cambiado a "numeric".
+
+### Ejercicio 4
+
+El cuarto ejercicio tiene diferentes partes. Por un lado, debemos hallar los valores únicos que puede tomar la variable *website_campaign*, pero sin tener en cuenta los valores NA de dicha columna. Esto lo conseguiremos con dos funcines, **unique()** y **na.omit()**. La primera de las dos funciones nos devolverá el número de valores únicos que tiene el array que introduzcamos entre paréntesis. Por otro lado, la segunda de las funciones elimina los NA que haya en el vector introducido entre paréntesis. Así, el resultado de la combinación de ambas es el siguiente:
+
+```{r ejercicio 4.1}
+unique(na.omit(df_mmm$website_campaign))
+```
+
+Así, los valores únicos son "Facebook", "Twitter" y "Website Campaign".
+
+Siguiendo con el ejercicio, debemos crear nuevas columnas a partir de la columna *website_campaign*. Las nuevas columnas serán 3 y serán llamadas "facebook", "twitter" y "website_campaign". Estas columnas únicamente podrán tomar el valor 1 o 0. Por ejemplo si en la columna *website_campaign* toma el valor "Facebook", entonces la nueva columna "facebook" deberá tomar el valor 1 en dicha línea y cuando *website_campaign* no tome dicho valor, entonces la nueva columna "facebook" tomará el valor 0. 
+
+Para llevar a cabo lo que acabamos de mencionar, haremos uso, una vez más, de las funciones **mutate**, de la librería "dplyr", **if_else** e **is.na**. A continuación mostramos el código implementado.
+
+```{r ejercicio 4.2}
+df_mmm <- df_mmm %>% 
+  mutate(
+    facebook = if_else(is.na(df_mmm$website_campaign), 0, 
+                       if_else(df_mmm$website_campaign == "Facebook", 1, 0)), 
+    twitter = if_else(is.na(df_mmm$website_campaign), 0, 
+                      if_else(df_mmm$website_campaign == "Twitter", 1, 0)), 
+    website_campaign = if_else(is.na(df_mmm$website_campaign), 0, 
+                               if_else(df_mmm$website_campaign == "Website Campaign", 1, 0))
+)
+```
+
+Comprobemos que los únicos valores de las nuevas columnas son 0 o 1.
+
+```{r ejercicio 4.3}
+unique(df_mmm$facebook)
+unique(df_mmm$twitter)
+unique(df_mmm$website_campaign)
+```
+
+Efectivamente. Sigamos ahora con el quinto ejercicio.
+
+### Ejercicio 5
+
+Para resolver el quinto ejercicio se debe crear un line plot de la variable *new_vol_sales*. Esta variable será la variable respuesta de nuestro gráfico, mientras que la covariable o la variable x será una secuencia de números desde 1 en adelante.
+
+Para crear este gráfico deberemos hacer uso de la librería "ggplot2", con la cual podemos crear un line plot mediante la función **geom_line**.
+
+```{r ejercicio 5.1}
+ggplot(df_mmm) + 
+  geom_line(aes(y = new_vol_sales, x = 1:nrow(df_mmm)))
+```
+
+### Ejercicio 6
+
+Una vez más, haciendo uso de la librería "ggplot2", creamos un histograma y un boxplot. A ambos les añadiremos el color "darkorchid4".
+
+En primer lugar, mostramos el histograma:
+
+```{r ejercicio 6.1}
+ggplot(df_mmm) + 
+  geom_histogram(aes(new_vol_sales), col = "black", fill = "darkorchid4")
+```
+
+Veamos ahora el boxplot:
+
+```{r ejercicio 6.2}
+ggplot(df_mmm) + 
+  geom_boxplot(aes(y = new_vol_sales), col = "black", fill = "darkorchid4")
+```
+
+Viendo el boxplot, podemos imaginar que el valor de la mediana estará cerca de 19900. comprobémoslo.
+
+```{r ejercicio 6.3}
+median(df_mmm$new_vol_sales)
+```
+
+El valor exacto de la mediana es 19943.5, no muy lejos de lo que acabamos de decir viendo el boxplot.
+
+### Ejercicio 7
+
+En primer lugar, seleccionamos y almacenamos las columnas *tv*, *radio* y *stout* en un nuevo data frame, al que denotaremos por df_media
+
+```{r ejercicio 7.1}
+df_media <- df_mmm %>% 
+  select(tv, radio, stout)
+```
+
+Usamos el código provisto por el ejercicio:
+
+```{r ejercicio 7.2}
+df_media <- df_media %>%
+  pivot_longer(everything())
+```
+
+Echemos un vistazo al data frame que tenemos.
+
+```{r ejercicio 7.3}
+df_media
+```
+
+Ahora tenemos que dibujar la evolución de estas columnas en un único gráfico. Para ello, haremos uso de la función **facet_grid**. Esta función nos forma una matriz de panéles dependiendo de un parámetro. En este caso usaremos la columna *name*. Esta columna puede tomar únicamente tres valores: tv, stout o radio. De esta forma obtendremos los 3 gráficos en 1, tal y como queríamos.
+
+```{r ejercicio 7.4}
+ggplot(df_media, aes(x = 1:nrow(df_media), y = value, col = name)) +
+  geom_line() +
+  facet_grid(name ~ ., scales = "free")
+```
+
+### Ejercicio 8
+
+En primer lugar, veamos qué tipo de valores toma la columna *in_store*
+
+```{r ejercicio 8.1}
+df_mmm
+```
+
+
+Debemoshacer un scatter plot o también conocido por gráfico de puntos, en el que comparamos la columna *new_vol_sales* frente a la columna *in_store*.
+
+Cuando decimos una columna frente a otra, en realidad nos referimos a...
+
+A continuación se muestra el código y gráfico pedido en el ejercicio.
+
+```{r ejercicio 8.2}
+ggplot(df_mmm) + 
+  geom_point(aes(x = in_store, y = new_vol_sales))
+```
+
+
+### Ejercicio 9
+
+Primera versión. Deberemos colorear cada punto basado en la columna *newspaper_inserts*.
+
+```{r ejercicio 9.1}
+ggplot(df_mmm) + 
+  geom_point(aes(x = in_store, y = new_vol_sales, col = as.factor(newspaper_inserts)))
+```
+
+Segunda versión. Deberemos colorear cada punto basado en la columna *tv*.
+
+```{r ejercicio 9.2}
+ggplot(df_mmm) + 
+  geom_point(aes(x = in_store, y = new_vol_sales, col = tv))
+```
+
+
+### Ejercicio 10
+
+Consideraremos el valor "1" cuando tenemos algún descuento y, consideraremos el valor "0" cuando no tenemos ningún descuento. Se considerará que hay descuento cuando la columna discount sea mayor que 0.
+
+```{r ejercicio 10.1}
+df_mmm <- df_mmm %>% 
+  mutate(discount_yesno = if_else(discount > 0, 1, 0))
+```
+
+Modificamos ahora la clase de la columna discount_yesno ya que nos interesa tenerla en forma de "factor". 
+
+```{r ejercicio 10.2}
+df_mmm <- df_mmm %>% 
+  mutate(discount_yesno = as.factor(discount_yesno))
+```
+
+Finalmente, agrupamos por los valores de la nueva columna creada *discount_yesno* y calculamos la media de *base_price* eliminando los valores NA. Con eliminar los NA lo que queremos decir es no considerarlos. También se debe hacer un gráfico de barras en el cual el eje x denotará si hay descuento o no y, el eje y denotará la media que se acaba de obtener.
+
+```{r ejercicio 10.3}
+df_mmm %>% 
+  group_by(discount_yesno) %>% 
+  summarise(base_price_avg = mean(base_price,na.rm = TRUE)) %>% 
+  ggplot() +
+  geom_col(aes(x = discount_yesno, y = base_price_avg))
+```
+
+
+### Ejercicio 11
+
+Se debe crear una función denotada *model_fit*. Esta función deberá devolvernos el valor del coeficiente de determinación de una regresión lineal que nos indica el propio ejercicio. El coeficiente de determinación no es más que el cuadrado del coeficiente de asimetría de Pearson y nos servirá para indicar la calidad del modelo de regresión lineal. Entonces, mayor coeficiente de determinación indica mejor modelo. El coeficiente de determinación está comprendido entre 0 y 1.
+
+En cuanto a la función, bastará con tomar como input *character* y el data frame que queramos usar, que lo denotaremos por *df*. Dentro de la función crearemos un *df_aux*, que tendrá las columnas que se encuentran en *character* + la columna *new_vol_sales*. Esta última variable la incluimos porque al calcular la regresión lineal haremos uso de la misma. Una vez se tiene *df_aux*, hacemos uso de la función **lm**, la cual crea una regresión lineal con las variables *new_vol_sales* y aquellas que se encuentren en *character*. Finalmente, devolvemos el valor del coeficiente de determinación de la regresión lineal, que es lo que nos interesa.
+
+```{r ejercicio 11.1}
+model_fit<- function (character, df) {
+  df_aux <- df %>% 
+    select(character, new_vol_sales)
+  
+  my_model <- lm(new_vol_sales ~ ., data = df_aux)
+  return(summary(my_model)$adj.r.squared)
+}
+```
+
+
+### Ejercicio 12
+
+Creamos los tres conjuntos que nos pide el ejercicio y los almacenamos en una lista que denotaremos por *lista*.
+
+```{r ejercicio 12.1}
+set1 <- c("base_price", "radio", "tv", "stout")
+set2 <- c("base_price", "in_store", "discount", "radio", "tv", "stout")
+set3 <- c("in_store", "discount")
+
+lista <- list(set1, set2, set3)
+```
+
+Haciendo uso de la función **sapply**:
+
+```{r ejercicio 12.2}
+sapply(lista, model_fit,  df = df_mmm)
+```
+
+Haciendo uso de la función **map_dbl**:
+
+```{r ejercicio 12.3}
+map_dbl(lista, model_fit, df = df_mmm)
+```
+
+Concluimos que el mejor conjunto es el segundo ya que el valor devuelto por la función model_fit es el mayor de los 3.
+
+
